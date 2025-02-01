@@ -6,7 +6,7 @@ import os
 import json
 import boto3
 from botocore.client import Config
-from datetime import datetime
+from datetime import datetime, timezone
 # from dotenv import load_dotenv
 
 # load_dotenv()
@@ -20,11 +20,13 @@ def extract_data(config, mongo_uri, database_name, start_date, end_date, airline
         # Connect to the database
         client = MongoClient(mongo_uri)
         database = client[database_name]
+        print(f"Connect to database {database_name}")
         query = {"db_created_at": {"$gte": start_date, "$lte": end_date}, "trip_airline_id": airline}
         collection = database[collection_name]
-
         cursor = collection.find(query).batch_size(10000)
+        print(f"Quering data from {collection_name} where date betweend {globals()['start_date']} and {globals()['end_date']}")
         result = [document for document in cursor]
+        print(f"Total number of query result data before transformation {len(result)}")
         return result
 
     except Exception as e:
@@ -65,6 +67,7 @@ def transform_data(data, config):
                 df[new_col] = pd.to_datetime(df[new_col], unit="ms")
 
     df['run_date'] = datetime.now().strftime('%Y-%m-%d')
+    print(f'Complete tranforming {file_name}')
 
     return df
 
@@ -85,7 +88,7 @@ def upload_to_s3(local_file, bucket_name, access_key, secret_key, s3_url, s3_reg
 
         # Upload file
         s3_client.upload_file(local_file, bucket_name, s3_path)
-        print(f"Uploaded {local_file} to s3://{bucket_name}/{s3_path}")
+        print(f"Uploaded {local_file} to s3://{bucket_name}/{s3_path} \n")
     except Exception as e:
         print(f"Error uploading to S3: {e}")
 
@@ -125,8 +128,8 @@ if __name__ == '__main__':
     run_date= os.getenv('RUN_DATE', '')
 
     #convert date to millisecond format
-    start_date_mil = int(datetime.strptime(start_date, '%Y-%m-%d').timestamp() * 1000)
-    end_date_mil = int(datetime.strptime(end_date, '%Y-%m-%d').timestamp() * 1000)
+    start_date_mil = int(datetime.strptime(start_date, '%Y-%m-%d').replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end_date_mil = int(datetime.strptime(end_date, '%Y-%m-%d').replace(tzinfo=timezone.utc).timestamp() * 1000)
 
     #load file config
     with open("config/configuration.json", "r") as file:
