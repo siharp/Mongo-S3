@@ -6,13 +6,19 @@ import os
 import json
 import boto3
 from botocore.client import Config
-from datetime import datetime, timezone
-# from dotenv import load_dotenv
+from datetime import datetime, timezone, timedelta
+from dotenv import load_dotenv
 
-# load_dotenv()
+load_dotenv()
 
 #function to extract data
 def extract_data(config, mongo_uri, database_name, start_date, end_date, airline):
+
+    # get filtering apptimestamp startdate - 30 days
+    dt = datetime.utcfromtimestamp(start_date / 1000)
+    new_dt = dt - timedelta(days=31)
+    new_timestamp_ms = int(new_dt.timestamp() * 1000)
+
     collection_name = config['schema_name']
 
     client = None
@@ -21,7 +27,7 @@ def extract_data(config, mongo_uri, database_name, start_date, end_date, airline
         client = MongoClient(mongo_uri)
         database = client[database_name]
         print(f"Connect to database {database_name}")
-        query = {"db_created_at": {"$gte": start_date, "$lte": end_date}, "trip_airline_id": airline}
+        query = {"db_created_at": {"$gte": start_date, "$lte": end_date}, "trip_airline_id": airline, "app_event_utc_timestamp": {"$gte": new_timestamp_ms }}
         collection = database[collection_name]
         cursor = collection.find(query).batch_size(10000)
         print(f"Quering data from {collection_name} where date betweend {globals()['start_date']} and {globals()['end_date']}")

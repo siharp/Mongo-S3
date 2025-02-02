@@ -6,7 +6,7 @@
       "output_file_type": "json",
       "read_batch_size": 300,
       "sort_ascending": true,
-      "filter_field_time": "app_event_utc_timestamp",
+      "filter_field_time": "db_created_at",
       "filter_col_dup": "application_event_watermelon_id",
       "transformations": {
         "_id": { "rename_to": "id", "convert_to": "string" },
@@ -53,7 +53,7 @@
       "output_file_type": "json",
       "read_batch_size": 300,
       "sort_ascending": true,
-      "filter_field_time": "app_event_utc_timestamp",
+      "filter_field_time": "db_created_at",
       "filter_col_dup": "content_event_watermelon_id",
       "transformations": {
         "_id": { "rename_to": "id", "convert_to": "string" },
